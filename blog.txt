@@ -1,0 +1,34 @@
+Due to climate change, sea levels are rising. Which makes me wonder, are landlocked
+bodies of water, like lakes, also affected? Intuitively the answer seems to be yes,
+but only to an extent, because you have to consider where its source of water is
+coming from. But that's just a hypothesis, let's see if the data backs it up.
+
+Canada happens to have a lot of lakes. In fact, roughly 62% of the lakes on this
+planet are in Canada. So for this analysis we'll analyze the water levels of the
+bodies of water in Canada since that'll give us the most data to work with.
+
+## Dataset
+After a little bit of digging, I found [this dataset](https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/) from the government of Canada. This dataset is comprised of the daily and monthly means of flow, water levels and sediment concentrations (for sediment sites) from all the water stations in Canada.
+Exactly what we need.
+
+## Prep
+Talking about how I manipulated the data to make it more usable
+
+## Plot
+- plot of canada with the ground transparent and the lakes sticking out
+Show picture of different plots.
+Explain what they show, different statistics.
+- Water levels of the lakes
+- Acidity?
+- Rate of change in water level
+- Size of the lakes
+- Etc
+
+### Conclusion
+Obviously, the factors I looked at aren't all the factors that could contribute. However, even from them,
+we see that X.
+
+What does this data support/not support?
+Prediction: build an ml model to predict one of the above questions.
+
+You can find my analysis in [this]() jupyter notebook
