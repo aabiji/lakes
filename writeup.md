@@ -1,3 +1,7 @@
+I want to preface this by saying that you should take my analysis with a grain
+of salt. I probably made a mistake or an oversight somewhere, so my reuslts are
+probably not correct. But, perhaps these findings might be a little interesting.
+
 Due to climate change, sea levels and global temperatures are rising.
 Intuitively, it seems that land locked bodies of water, like lakes would
 also be affected. In fact, the EDA did an
@@ -5,8 +9,8 @@ also be affected. In fact, the EDA did an
 that the water levels and temperatures of the great lakes have risen slightly.
 Which makes me wonder, what about the bodies of water in Canada?
 Canada happens to have a lot of lakes. In fact, roughly 62% of the lakes on this
-planet are in Canada. So this analysis will look at the water levels and temperatures
-of the various bodies of water in Canada to see if they too are increasing.
+planet are in Canada. So this analysis will look at the water levels, water flow rates
+and temperatures of the various bodies of water in Canada to see if they too are increasing.
 
 After a little bit of digging, I found [this dataset](https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/) from the government of Canada. This dataset is comprised of the daily and monthly means of flow, water levels and sediment concentrations (for sediment sites) from all the gauging stations in Canada.
 
@@ -66,7 +70,8 @@ massive spike in water level in the 1920s, but that doesn't make sense, since th
 1920s in Canada were characterized by drought.
 
 I thought about it some more, looking at the database reference more closely.
-Then it hit me, *each station is using a different datum*! A datum in this context is
+Then it hit me, *each station is using a different
+[datum](https://wateroffice.ec.gc.ca/report/datum_faq_e.html)*! A datum in this context is
 a reference surface for elevations.  For example, in Canada a common standard vertical
 datum is CGVD2013 (Canadian Geodetic Vertical Datum of 2013). It uses a surface
 called a geoid as its reference. The geoid is an [equipotential](https://en.wikipedia.org/wiki/Equipotential) surface of the Earth's gravity field, which closely approximates average
@@ -109,14 +114,19 @@ specifically in 1964, but this is something we can explain. Since in 1964, there
 tsunami that affected the British Columbia coast, and severe flooding in Alberta and Saskatchewan
 from heavy rainfall and runoff. But this is just one datum, we need to consider all of them.
 
-To do that, we can superpose all the graphs together, which gives us this graph:
+To do that, we can superpose all the graphs together.
 
 ```py
 TODO: show the code
 ```
 
-After the superposing, we get this graph:
+Which gives us this graph:
 ![Fourth attempt](imgs/attempt-4.png)
+
+From the graph, we can see that there aren't actually any long term trends.
+The water levels have remained fairly consistent throughout the decades.
+So from this, we could say that climate change isn't having an effect on the water
+levels of land locked bodies. But maybe that isn't the full story...
 
 ## Plot
 - plot of canada with the ground transparent and the lakes sticking out
