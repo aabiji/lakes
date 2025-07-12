@@ -2,31 +2,8 @@ import bs4, glob, os, re, requests, sqlite3, zipfile
 import matplotlib.pyplot as plt
 import pandas as pd
 
-def get_dataset():
-    base_url = "https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/"
-    soup = bs4.BeautifulSoup(requests.get(base_url).text, "html.parser")
-
-    # anything that contains _sqlite3_ and ends in .zip
-    pattern = re.compile(r".*_sqlite3_.*\.zip")
-
-    links = [l for l in soup.find_all("a") if pattern.match(l.get_text())]
-    filename = links[0]["href"]
-
-    response = requests.get(f"{base_url}{filename}")
-    with open("dataset.zip", "wb") as output:
-        output.write(response.content)
-
-    with zipfile.ZipFile("dataset.zip", 'r') as zip_ref:
-        zip_ref.extractall("dataset")
-
-    files = glob.glob('./dataset/*.sqlite3', recursive=True)
-    os.remove("dataset.zip")
-    return files[0]
-
-path = "dataset/Hydat.sqlite3"
-connection = sqlite3.connect(path)
-
 # Database reference: https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/HYDAT_Definition_EN.pdf
+connection = sqlite3.connect("dataset/Hydat.sqlite3")
 
 class Station:
     def __init__(self, number):
@@ -35,11 +12,6 @@ class Station:
         self.latitude = data["LATITUDE"][0]
         self.longitude = data["LONGITUDE"][0]
         self.number = number
-
-def is_not_regulated(station_number, connection):
-    data = pd.read_sql_query(f"SELECT REGULATED FROM STN_REGULATION WHERE STATION_NUMBER='{station_number}'", connection)
-    return len(data["REGULATED"]) == 0 or data["REGULATED"][0] == 0
-
 """
 Data symbols:
 
@@ -77,7 +49,6 @@ Sediment data types:
 All about Datums:
 
 https://wateroffice.ec.gc.ca/report/datum_faq_e.html
-
 
 Can we assume everything's in meters, then to convert between the
 different datums, we just add?
@@ -120,7 +91,6 @@ For example:
 2038        11AC068             10           35         808.161011
 """
 
-"""
 # so, we're getting the average water levels from all the different stations per year
 
 # TODO: take a look at the minimum and maximums too, maybe they look different
@@ -129,35 +99,59 @@ For example:
 #       we need to convert all the stations to use the same datum (measurement reference point)
 # TODO: look at these other factors: precipitation, temperature, evaporation
 
-values = pd.read_sql_query("SELECT * from ANNUAL_STATISTICS", connection)
-water_levels = values[values["DATA_TYPE"] == "H"]
+stations = pd.read_sql_query("SELECT * from STATIONS", connection)
 
-station_numbers = water_levels["STATION_NUMBER"].unique()
-unregulated_stations = [s for s in station_numbers if is_not_regulated(s, connection)]
+target_datum = 605
+query = f"SELECT DATUM_EN from DATUM_LIST WHERE DATUM_ID='{target_datum}'"
+target_datum_name = pd.read_sql_query(query, connection)["DATUM_EN"].values[0]
 
-# only want water sources that aren't regulated
-filtered = water_levels[water_levels["STATION_NUMBER"].isin(unregulated_stations)].copy()
+annual_statistics = pd.read_sql_query("SELECT * from ANNUAL_STATISTICS", connection)
+all_water_levels = annual_statistics[annual_statistics["DATA_TYPE"] == "H"]
 
-filtered = filtered.sort_values(by=["STATION_NUMBER", "YEAR"])
+all_stations = all_water_levels["STATION_NUMBER"].unique()
 
-filtered = filtered.dropna(subset=["MEAN"]) # remove NaNs
+# only consider water sources that haven't been regulated
+regulation_data = pd.read_sql_query("SELECT * FROM STN_REGULATION", connection)
+regulated_stations = regulation_data.loc[regulation_data["REGULATED"] == 1, "STATION_NUMBER"]
+unregulated_stations = set(all_stations) - set(regulated_stations)
+all_water_levels = all_water_levels[all_water_levels["STATION_NUMBER"].isin(unregulated_stations)]
+
+# only select water level data that uses a common datum or can be converted to the common datum
+stations_already_with_datum = stations[stations["DATUM_ID"] == target_datum]["STATION_NUMBER"]
+water_levels_using_datum = all_water_levels[all_water_levels["STATION_NUMBER"].isin(stations_already_with_datum)]
+
+conversions = pd.read_sql_query("SELECT * from STN_DATUM_CONVERSION", connection)
+convertible_stations = conversions[conversions["DATUM_ID_TO"] == target_datum]
+
+# add the conversion factor column to corresponding station numbers
+water_levels_with_conversion_factor = pd.merge(
+    all_water_levels,
+    convertible_stations[["STATION_NUMBER", "CONVERSION_FACTOR"]],
+    on="STATION_NUMBER",
+    how="inner"
+)
+
+# apply the conversion factors to station data that can we converted to the target datum
+water_levels_with_conversion_factor["MEAN"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
+water_levels_with_conversion_factor["MIN"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
+water_levels_with_conversion_factor["MAX"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
+
+# remove the conversion factor column since we don't need it anymore
+water_levels_with_conversion_factor.drop(columns="CONVERSION_FACTOR", inplace=True)
+
+# now all the water level data are using the same datum
+water_levels = pd.concat([water_levels_using_datum, water_levels_with_conversion_factor], ignore_index=True)
+
+water_levels = water_levels.dropna(subset=["MEAN"])
+water_levels = water_levels.sort_values(by=["YEAR"])
 
 # group duplicate years from different stations together, and average the means
-mean_water_levels_by_year = filtered.groupby("YEAR")["MEAN"].mean()
+mean_water_levels_by_year = water_levels.groupby("YEAR")["MEAN"].mean()
 
 plt.plot(mean_water_levels_by_year.index, mean_water_levels_by_year.values)
-plt.title(f"Mean annual water levels of various bodies of water in Canada")
+plt.title(f"Mean annual water levels of the bodies of water in Canada using {target_datum_name}", wrap=True)
 plt.xlabel("Year")
 plt.ylabel("Mean water level")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
-"""
-
-values = pd.read_sql_query("SELECT * from STN_DATUM_CONVERSION", connection)
-
-stations = values.groupby("DATUM_ID_TO")
-for name, group in stations:
-    print(name)
-    print(group)
-    print()

@@ -14,7 +14,29 @@ After a little bit of digging, I found [this dataset](https://collaboration.cmc.
 The dataset was packaged as an sqlite3 database, so downloading it and loading it into a
 pandas dataframe was pretty trivial. 
 ```py
-# TODO: put the downloading code
+def get_dataset():
+    base_url = "https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/"
+    soup = bs4.BeautifulSoup(requests.get(base_url).text, "html.parser")
+
+    # anything that contains _sqlite3_ and ends in .zip
+    pattern = re.compile(r".*_sqlite3_.*\.zip")
+
+    links = [l for l in soup.find_all("a") if pattern.match(l.get_text())]
+    filename = links[0]["href"]
+
+    response = requests.get(f"{base_url}{filename}")
+    with open("dataset.zip", "wb") as output:
+        output.write(response.content)
+
+    with zipfile.ZipFile("dataset.zip", 'r') as zip_ref:
+        zip_ref.extractall("dataset")
+
+    files = glob.glob('./dataset/*.sqlite3', recursive=True)
+    os.remove("dataset.zip")
+    return files[0]
+
+path = get_dataset()
+connection = sqlite3.connect(path)
 ```
 
 From the database, the ANNUAL_STATISTICS table would give us the data we needed.
@@ -27,7 +49,7 @@ My initial course of action was to plot the mean water levels over the years fro
 # TODO: put the main code from the first commit
 ```
 That gave me a graph that looked like this:
-![First attempt](first-attempt.png)
+![First attempt](imgs/attempt-1.png)
 
 As we can see, each station has different baselines for water levels, so the graph
 doesn't really tell us much, as it's discontinuous.
@@ -38,7 +60,7 @@ This would mean that we're not placing less emphasis on each individual water st
 and more on the whole of Canada.
 
 Which gave us a graph that looks like this:
-![Second attempt](second-attempt.png)
+![Second attempt](imgs/attempt-2.png)
 
 Which is much better. But the graph still seems wrong. It looks like there was this
 massive spike in water level in the 1920s, but that doesn't make sense, since the
@@ -80,15 +102,22 @@ their water levels converted to that datum and convert the water levels
 (just adding the conversion factors). And now that the datums are the same
 we can continue graphing like before.
 
-At the end, we can superpose the graphs together and maybe they'll
-show the same trend. Let's try:
+So using CGVD2013  like before, we get this graph:
+![Third attempt](imgs/attempt-3.png)
+
+Which is much better. We do see a huge spike in water level in the 1960s, that's suspect,
+specifically in 1964, but this is something we can explain. Since in 1964, there was a
+tsunami that affected the British Columbia coast, and severe flooding in Alberta and Saskatchewan
+from heavy rainfall and runoff. But this is just one datum, we need to consider all of them.
+
+To do that, we can superpose all the graphs together, which gives us this graph:
 
 ```py
 TODO: show the code
 ```
 
 After the superposing, we get this graph:
-![Third attempt](third-attempt.png)
+![Fourth attempt](imgs/attempt-4.png)
 
 ## Plot
 - plot of canada with the ground transparent and the lakes sticking out
