@@ -1,13 +1,12 @@
-Due to climate change, sea levels are rising. Which makes me wonder, are landlocked
-bodies of water, like lakes, also affected? Intuitively the answer seems to be yes,
-but only to an extent, because you have to consider where its source of water is
-coming from. But that's just a hypothesis, let's see if the data backs it up.
-
-TODO: put guess -- will the water level rise or fall??
-
+Due to climate change, sea levels and global temperatures are rising.
+Intuitively, it seems that land locked bodies of water, like lakes would
+also be affected. In fact, the EDA did an
+[analysis](https://www.epa.gov/climate-indicators/great-lakes) that showed
+that the water levels and temperatures of the great lakes have risen slightly.
+Which makes me wonder, what about the bodies of water in Canada?
 Canada happens to have a lot of lakes. In fact, roughly 62% of the lakes on this
-planet are in Canada. So for this analysis we'll analyze the water levels of the
-bodies of water in Canada since that'll give us the most data to work with.
+planet are in Canada. So this analysis will look at the water levels and temperatures
+of the various bodies of water in Canada to see if they too are increasing.
 
 After a little bit of digging, I found [this dataset](https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/) from the government of Canada. This dataset is comprised of the daily and monthly means of flow, water levels and sediment concentrations (for sediment sites) from all the gauging stations in Canada.
 
@@ -44,7 +43,7 @@ From the database, the ANNUAL_STATISTICS table would give us the data we needed.
 TODO: put the pandas output for the table
 ```
 
-My initial course of action was to plot the mean water levels over the years from each gauging station.
+My initial course of action was to plot the mean water levels over the years from each gauging station. I chose to use the mean, because I also graphed the min and max and found that they looked nearly identical.
 ```py
 # TODO: put the main code from the first commit
 ```

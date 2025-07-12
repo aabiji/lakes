@@ -99,57 +99,73 @@ For example:
 #       we need to convert all the stations to use the same datum (measurement reference point)
 # TODO: look at these other factors: precipitation, temperature, evaporation
 
-stations = pd.read_sql_query("SELECT * from STATIONS", connection)
+# get the most frequently used datums
+conversions = pd.read_sql_query("SELECT * from STN_DATUM_CONVERSION", connection)
+datum_usage_counts = conversions.groupby("DATUM_ID_TO")["STATION_NUMBER"].count()
+most_used_datums = datum_usage_counts.sort_values(ascending=False).index[:3].tolist()
 
-target_datum = 605
-query = f"SELECT DATUM_EN from DATUM_LIST WHERE DATUM_ID='{target_datum}'"
-target_datum_name = pd.read_sql_query(query, connection)["DATUM_EN"].values[0]
+stations = pd.read_sql_query("SELECT * from STATIONS", connection)
 
 annual_statistics = pd.read_sql_query("SELECT * from ANNUAL_STATISTICS", connection)
 all_water_levels = annual_statistics[annual_statistics["DATA_TYPE"] == "H"]
 
 all_stations = all_water_levels["STATION_NUMBER"].unique()
+datums_used = stations[stations["STATION_NUMBER"].isin(all_stations)]["DATUM_ID"].unique()
 
-# only consider water sources that haven't been regulated
-regulation_data = pd.read_sql_query("SELECT * FROM STN_REGULATION", connection)
-regulated_stations = regulation_data.loc[regulation_data["REGULATED"] == 1, "STATION_NUMBER"]
-unregulated_stations = set(all_stations) - set(regulated_stations)
-all_water_levels = all_water_levels[all_water_levels["STATION_NUMBER"].isin(unregulated_stations)]
+#query = f"SELECT DATUM_EN from DATUM_LIST WHERE DATUM_ID='{target_datum}'"
+#target_datum_name = pd.read_sql_query(query, connection)["DATUM_EN"].values[0]
 
-# only select water level data that uses a common datum or can be converted to the common datum
-stations_already_with_datum = stations[stations["DATUM_ID"] == target_datum]["STATION_NUMBER"]
-water_levels_using_datum = all_water_levels[all_water_levels["STATION_NUMBER"].isin(stations_already_with_datum)]
+# Ok, so the plot's technically correct...but it's really messy
+# what if we the top 5 most used datums or something?
+# or maybe we can fit a regression line???
 
-conversions = pd.read_sql_query("SELECT * from STN_DATUM_CONVERSION", connection)
-convertible_stations = conversions[conversions["DATUM_ID_TO"] == target_datum]
+for target_datum in most_used_datums:
+    # only consider water sources that haven't been regulated
+    regulation_data = pd.read_sql_query("SELECT * FROM STN_REGULATION", connection)
+    regulated_stations = regulation_data.loc[regulation_data["REGULATED"] == 1, "STATION_NUMBER"]
+    unregulated_stations = set(all_stations) - set(regulated_stations)
+    all_water_levels = all_water_levels[all_water_levels["STATION_NUMBER"].isin(unregulated_stations)]
 
-# add the conversion factor column to corresponding station numbers
-water_levels_with_conversion_factor = pd.merge(
-    all_water_levels,
-    convertible_stations[["STATION_NUMBER", "CONVERSION_FACTOR"]],
-    on="STATION_NUMBER",
-    how="inner"
-)
+    # only select water level data that uses a common datum or can be converted to the common datum
+    stations_already_with_datum = stations[stations["DATUM_ID"] == target_datum]["STATION_NUMBER"]
+    water_levels_using_datum = all_water_levels[all_water_levels["STATION_NUMBER"].isin(stations_already_with_datum)]
 
-# apply the conversion factors to station data that can we converted to the target datum
-water_levels_with_conversion_factor["MEAN"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
-water_levels_with_conversion_factor["MIN"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
-water_levels_with_conversion_factor["MAX"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
+    conversions = pd.read_sql_query("SELECT * from STN_DATUM_CONVERSION", connection)
+    convertible_stations = conversions[conversions["DATUM_ID_TO"] == target_datum]
 
-# remove the conversion factor column since we don't need it anymore
-water_levels_with_conversion_factor.drop(columns="CONVERSION_FACTOR", inplace=True)
+    # add the conversion factor column to corresponding station numbers
+    water_levels_with_conversion_factor = pd.merge(
+        all_water_levels,
+        convertible_stations[["STATION_NUMBER", "CONVERSION_FACTOR"]],
+        on="STATION_NUMBER",
+        how="inner"
+    )
 
-# now all the water level data are using the same datum
-water_levels = pd.concat([water_levels_using_datum, water_levels_with_conversion_factor], ignore_index=True)
+    # apply the conversion factors to station data that can we converted to the target datum
+    #water_levels_with_conversion_factor["MEAN"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
+    #water_levels_with_conversion_factor["MIN"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
+    water_levels_with_conversion_factor["MAX"] += water_levels_with_conversion_factor["CONVERSION_FACTOR"]
 
-water_levels = water_levels.dropna(subset=["MEAN"])
-water_levels = water_levels.sort_values(by=["YEAR"])
+    # remove the conversion factor column since we don't need it anymore
+    water_levels_with_conversion_factor.drop(columns="CONVERSION_FACTOR", inplace=True)
 
-# group duplicate years from different stations together, and average the means
-mean_water_levels_by_year = water_levels.groupby("YEAR")["MEAN"].mean()
+    # now all the water level data are using the same datum
+    water_levels = pd.concat([water_levels_using_datum, water_levels_with_conversion_factor], ignore_index=True)
 
-plt.plot(mean_water_levels_by_year.index, mean_water_levels_by_year.values)
-plt.title(f"Mean annual water levels of the bodies of water in Canada using {target_datum_name}", wrap=True)
+    #water_levels = water_levels.dropna(subset=["MEAN"])
+    #water_levels["MEAN"] = water_levels["MEAN"].ffill()
+    #water_levels["MIN"] = water_levels["MIN"].ffill()
+    water_levels["MAX"] = water_levels["MAX"].ffill()
+    water_levels = water_levels.sort_values(by=["YEAR"])
+
+    # group duplicate years from different stations together, and average the means
+    #mean_water_levels_by_year = water_levels.groupby("YEAR")["MEAN"].mean()
+    #mean_water_levels_by_year = water_levels.groupby("YEAR")["MIN"].mean()
+    mean_water_levels_by_year = water_levels.groupby("YEAR")["MAX"].mean()
+
+    plt.plot(mean_water_levels_by_year.index, mean_water_levels_by_year.values)
+
+plt.title(f"Mean annual water levels of the bodies of water in Canada", wrap=True)
 plt.xlabel("Year")
 plt.ylabel("Mean water level")
 plt.grid(True)
