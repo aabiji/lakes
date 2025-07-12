@@ -3,16 +3,92 @@ bodies of water, like lakes, also affected? Intuitively the answer seems to be y
 but only to an extent, because you have to consider where its source of water is
 coming from. But that's just a hypothesis, let's see if the data backs it up.
 
+TODO: put guess -- will the water level rise or fall??
+
 Canada happens to have a lot of lakes. In fact, roughly 62% of the lakes on this
 planet are in Canada. So for this analysis we'll analyze the water levels of the
 bodies of water in Canada since that'll give us the most data to work with.
 
-## Dataset
-After a little bit of digging, I found [this dataset](https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/) from the government of Canada. This dataset is comprised of the daily and monthly means of flow, water levels and sediment concentrations (for sediment sites) from all the water stations in Canada.
-Exactly what we need.
+After a little bit of digging, I found [this dataset](https://collaboration.cmc.ec.gc.ca/cmc/hydrometrics/www/) from the government of Canada. This dataset is comprised of the daily and monthly means of flow, water levels and sediment concentrations (for sediment sites) from all the gauging stations in Canada.
 
-## Prep
-Talking about how I manipulated the data to make it more usable
+The dataset was packaged as an sqlite3 database, so downloading it and loading it into a
+pandas dataframe was pretty trivial. 
+```py
+# TODO: put the downloading code
+```
+
+From the database, the ANNUAL_STATISTICS table would give us the data we needed.
+```
+TODO: put the pandas output for the table
+```
+
+My initial course of action was to plot the mean water levels over the years from each gauging station.
+```py
+# TODO: put the main code from the first commit
+```
+That gave me a graph that looked like this:
+![First attempt](first-attempt.png)
+
+As we can see, each station has different baselines for water levels, so the graph
+doesn't really tell us much, as it's discontinuous.
+
+My second approach involved aggregating water level data from multiple monitoring
+stations by calculating the average annual water level across all stations each year.
+This would mean that we're not placing less emphasis on each individual water station
+and more on the whole of Canada.
+
+Which gave us a graph that looks like this:
+![Second attempt](second-attempt.png)
+
+Which is much better. But the graph still seems wrong. It looks like there was this
+massive spike in water level in the 1920s, but that doesn't make sense, since the
+1920s in Canada were characterized by drought.
+
+I thought about it some more, looking at the database reference more closely.
+Then it hit me, *each station is using a different datum*! A datum in this context is
+a reference surface for elevations.  For example, in Canada a common standard vertical
+datum is CGVD2013 (Canadian Geodetic Vertical Datum of 2013). It uses a surface
+called a geoid as its reference. The geoid is an [equipotential](https://en.wikipedia.org/wiki/Equipotential) surface of the Earth's gravity field, which closely approximates average
+sea level globally (but can vary because of gravity differences). So, water levels
+measured relative to CGVD2013 are effectively measured relative to the Earth's
+gravity defined average sea level.
+
+Since each gauging station is using a different datum, we have 2 main options.
+We can try to convert all the stations to a common datum. But, looking through
+the dataset:
+```
+     STATION_NUMBER  DATUM_ID_FROM  DATUM_ID_TO  CONVERSION_FACTOR
+0           01AD009            405          415         168.270996
+1           01AD014            405          415         162.388000
+2           01AF003             10           35         141.917999
+3           01AG002             10           35         104.588997
+4           01AG003             10           35          75.311996
+...             ...            ...          ...                ...
+2034        11AC062             10           35         794.437988
+2035        11AC063             35           90          -0.064000
+2036        11AC065             35           90          -0.014000
+2037        11AC066             10           35         824.281006
+2038        11AC068             10           35         808.161011
+```
+it seems as though there isn't a common datum that each station can convert to.
+But it seems like (TODO: list the datums) are the most common.
+
+Which leaves us with the second option, which is to analyze water levels
+per each datum. So for each datum, we take all the stations that are
+already using that datum. We also take all the stations that can have
+their water levels converted to that datum and convert the water levels
+(just adding the conversion factors). And now that the datums are the same
+we can continue graphing like before.
+
+At the end, we can superpose the graphs together and maybe they'll
+show the same trend. Let's try:
+
+```py
+TODO: show the code
+```
+
+After the superposing, we get this graph:
+![Third attempt](third-attempt.png)
 
 ## Plot
 - plot of canada with the ground transparent and the lakes sticking out
