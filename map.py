@@ -4,9 +4,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import sqlite3
 
-import download
-
-provinces_shapefile, countries_shapefile = download.download_shapefiles()
+provinces_shapefile = "ne_10m_admin_1_states_provinces/ne_10m_admin_1_states_provinces.shp"
+countries_shapefile = "ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp"
 
 connection = sqlite3.connect("dataset/Hydat.sqlite3")
 stations = pd.read_sql_query("SELECT * from STATIONS", connection)

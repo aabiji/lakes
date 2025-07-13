@@ -16,6 +16,7 @@ most_used_datums = datum_usage_counts.sort_values(ascending=False).index.tolist(
 stations = pd.read_sql_query("SELECT * from STATIONS", connection)
 
 annual_statistics = pd.read_sql_query("SELECT * from ANNUAL_STATISTICS", connection)
+print(annual_statistics)
 all_water_levels = annual_statistics[annual_statistics["DATA_TYPE"] == "H"] # T = daily mean tonnes, Q = flow
 
 all_stations = all_water_levels["STATION_NUMBER"].unique()
@@ -63,8 +64,6 @@ for target_datum in most_used_datums:
     water_levels[column] = water_levels.groupby("STATION_NUMBER")[column].transform(z_score_normalize)
 
     # group duplicate years from different stations together, and average the means
-    mean_water_levels_by_year = water_levels.groupby("YEAR")[column].mean()
-
     mean_water_levels_by_year = water_levels.groupby("YEAR")[column].mean().reset_index()
     yearly_station_data.append(mean_water_levels_by_year)
 
