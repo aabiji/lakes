@@ -1,3 +1,5 @@
+![Gauging stations](imgs/gauging_stations.png)
+
 I want to preface this by saying that you should take my analysis with a grain
 of salt. I probably made a mistake or an oversight somewhere, so my reuslts are
 probably not correct. But, perhaps these findings might be a little interesting.
