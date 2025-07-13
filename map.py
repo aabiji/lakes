@@ -4,13 +4,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import sqlite3
 
-# TODO: functions to automatically download and extract these
+import download
 
-# download from: https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_1_states_provinces.zip
-shapefile_path = "/home/aabiji/Downloads/provinces/ne_10m_admin_1_states_provinces.shp"
-
-# download from: https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/cultural/ne_10m_admin_0_countries.zip
-country_shapefile_path = "/home/aabiji/Downloads/countries/ne_10m_admin_0_countries.shp"
+provinces_shapefile, countries_shapefile = download.download_shapefiles()
 
 connection = sqlite3.connect("dataset/Hydat.sqlite3")
 stations = pd.read_sql_query("SELECT * from STATIONS", connection)
@@ -22,13 +18,13 @@ ax = plt.axes(projection=ccrs.PlateCarree())
 ax.set_extent([-141, -52, 41, 84], crs=ccrs.PlateCarree())
 
 # plot the provinces
-reader = shpreader.Reader(shapefile_path)
+reader = shpreader.Reader(provinces_shapefile)
 provinces = [r.geometry for r in reader.records() if r.attributes["admin"] == "Canada"]
 for geometry in provinces:
     ax.add_geometries([geometry], ccrs.PlateCarree(), edgecolor="gray",
                       facecolor="none", linewidth=1)
 
-countries = shpreader.Reader(country_shapefile_path)
+countries = shpreader.Reader(countries_shapefile)
 country = [r.geometry for r in countries.records() if r.attributes["ADMIN"] == "Canada"]
 
 # plot the border

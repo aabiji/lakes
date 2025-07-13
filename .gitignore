@@ -11,3 +11,5 @@ wheels/
 
 # dataset
 dataset/
+ne_10m_admin_0_countries/
+ne_10m_admin_1_states_provinces/
