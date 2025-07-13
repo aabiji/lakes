@@ -128,7 +128,16 @@ Which gives us this graph:
 From the graph, we can see that there aren't actually any long term trends.
 The water levels have remained fairly consistent throughout the decades.
 So from this, we could say that climate change isn't having an effect on the water
-levels of land locked bodies. But maybe that isn't the full story...
+levels of land locked bodies. But maybe that isn't the full story.
+
+I also plotted the water temperatures 
+The dataset also included records of sediment samples that were taken,
+which included the water temperature at the time the sediments were taken.
+So, I plotted the mean water temperatures over the yaer.
+
+![Water temperatures](imgs/temperatures.png)
+
+We see that the water temperatures have been slowly rising over the decades.
 
 ## Plot
 - plot of canada with the ground transparent and the lakes sticking out

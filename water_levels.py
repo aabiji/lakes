@@ -1,11 +1,10 @@
-import bs4, glob, os, re, requests, sqlite3, zipfile
 import matplotlib.pyplot as plt
 import pandas as pd
+import sqlite3
 
 connection = sqlite3.connect("dataset/Hydat.sqlite3")
 
 # TODO: look at water flow, temperature, daily mean tonnes
-# TODO: plot the station latitude and longitude on a map (that'll be the blog intro image)
 def z_score_normalize(group):
     return (group - group.mean()) / group.std()
 
