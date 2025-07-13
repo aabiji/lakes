@@ -2,7 +2,7 @@
 
 I want to preface this by saying that you should take my analysis with a grain
 of salt. I probably made a mistake or an oversight somewhere, so my reuslts are
-probably not correct. But, perhaps these findings might be a little interesting.
+probably not correct. What I think is more interesting, is how I did the analysis.
 
 Due to climate change, sea levels and global temperatures are rising.
 Intuitively, it seems that land locked bodies of water, like lakes would
